@@ -24,4 +24,12 @@
     <string name="msg_strings_injection_parser_unsupported">This device does not support the XML parser configuration required to update generated string resources.</string>
     <string name="msg_strings_injection_invalid_xml">Generated string resources are not valid XML.</string>
     <string name="msg_floating_window_open_failed">Couldn\'t open “%1$s” in a floating window.</string>
+    <string name="pilgrix_bot_open">Open PilgrixBot</string>
+    <string name="pilgrix_bot_title">PilgrixBot</string>
+    <string name="pilgrix_bot_subtitle">Your AI coding companion</string>
+    <string name="pilgrix_bot_hint">Ask anything about your project…</string>
+    <string name="pilgrix_bot_welcome">Hi! I’m PilgrixBot. Tell me what you’re building and I’ll help you work through it.</string>
+    <string name="pilgrix_bot_send">Send</string>
+    <string name="pilgrix_bot_new_chat">New chat</string>
+    <string name="pilgrix_bot_thinking">Thinking…</string>
 </resources>
