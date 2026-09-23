@@ -52,6 +52,17 @@
       android:text="@string/msg_create_new_project_greeting"
       android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/pilgrixBotButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
+      android:text="@string/pilgrix_bot_open"
+      android:textAllCaps="false"
+      app:cornerRadius="18dp"
+      app:icon="@drawable/ic_sparkles"
+      app:iconGravity="textStart" />
+
     <Space
       android:layout_width="match_parent"
       android:layout_height="0dp"
