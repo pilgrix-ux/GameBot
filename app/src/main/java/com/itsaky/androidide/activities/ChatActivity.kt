@@ -36,7 +36,6 @@ class ChatActivity : AppCompatActivity() {
     private var thinkingView: TextView? = null
 
     private val functionUrl = "https://kgbnygrwhjzkodkiesbq.supabase.co/functions/v1/chat"
-    private val publishableKey = "sb_publishable_uH4ywRq9NvoyICjsNi00aQ_1QN5DDPm"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,8 +91,7 @@ class ChatActivity : AppCompatActivity() {
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("apikey", publishableKey)
-            }
+                // The chat Edge Function is intentionally configured as a public endpoint.\n            }
 
             val payload = JSONObject().apply {
                 put("messages", JSONArray().apply {
