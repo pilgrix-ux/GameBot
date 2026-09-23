@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.content.Intent
 import androidx.core.view.isVisible
 import com.itsaky.androidide.R
 import com.itsaky.androidide.utils.BasicBuildInfo
@@ -89,6 +90,9 @@ class MainFragment : BaseFragment() {
 			true
 		}
 		binding!!.greetingText.setOnClickListener { ifAttached { openQuickstartPageAction() } }
+		binding!!.pilgrixBotButton.setOnClickListener {
+			ifAttached { startActivity(Intent(requireContext(), com.itsaky.androidide.activities.ChatActivity::class.java)) }
+		}
 
 		handleGitUrlDrop(
 			shouldAcceptDrop = {
