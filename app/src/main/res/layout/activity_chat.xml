@@ -93,7 +93,6 @@
                     android:minHeight="48dp"
                     android:paddingStart="12dp"
                     android:paddingEnd="8dp" />
-            </com.google.android.material.textfield.TextInputEditText>
             </com.google.android.material.textfield.TextInputLayout>
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/sendButton"
