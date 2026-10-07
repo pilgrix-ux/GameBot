@@ -32,4 +32,8 @@
     <string name="pilgrix_bot_send">Send</string>
     <string name="pilgrix_bot_new_chat">New chat</string>
     <string name="pilgrix_bot_thinking">Thinking…</string>
+    <string name="pilgrix_bot_attach_apk">Attach APK</string>
+    <string name="pilgrix_bot_apk_attached">APK: %1$s</string>
+    <string name="pilgrix_bot_apk_ready">I received %1$s and inspected it: %2$d DEX file(s), %3$d native library file(s). Tell me what you want changed.</string>
+    <string name="pilgrix_bot_apk_failed">Couldn’t prepare that APK.</string>
 </resources>
