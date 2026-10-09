@@ -6,13 +6,13 @@ Native Android app built with Kotlin and Jetpack Compose. The chapter reader use
 
 1. Register this Android app at the [YouVersion Platform](https://platform.youversion.com/) and obtain an App Key.
 2. Confirm your app has access to the NIV translation and has accepted any required license terms. A Bible ID by itself does not grant access to copyrighted translation content.
-3. Add the key to your **user-level Gradle properties**, not to a committed repository file. For example, add the following line to `~/.gradle/gradle.properties` on the machine building the app:
+3. Provide `YVP_APP_KEY` locally, without committing it. The easiest option in Android Studio/AndroidIDE is to add a line to the root `local.properties` file (this file is ignored by Git):
 
    ```properties
    YVP_APP_KEY=your_app_key_here
    ```
 
-   You can alternatively provide `YVP_APP_KEY` as an environment variable when running Gradle.
+   Alternatively, set `YVP_APP_KEY` as an environment variable or in your user-level `~/.gradle/gradle.properties`.
 4. Sync Gradle and rebuild/reinstall the Android app.
 
 The app sends chapter requests to `https://api.youversion.com/v1/bibles/111/passages/{USFM}.{chapter}?format=text` using the `X-YVP-App-Key` header. It shows separate states for an absent key, an invalid key, missing NIV access, network failure, rate limiting, and provider errors.

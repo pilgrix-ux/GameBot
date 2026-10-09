@@ -4,8 +4,13 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val localProperties = java.util.Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.isFile) localFile.inputStream().use { load(it) }
+}
 val yvpAppKey = providers.gradleProperty("YVP_APP_KEY")
     .orElse(providers.environmentVariable("YVP_APP_KEY"))
+    .orElse(localProperties.getProperty("YVP_APP_KEY").orEmpty())
     .getOrElse("")
 
 android {
