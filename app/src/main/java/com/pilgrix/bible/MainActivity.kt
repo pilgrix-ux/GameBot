@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CancellationException
 
 private val Ink = Color(0xFF101C2C)
 private val InkSoft = Color(0xFF1A2B40)
@@ -309,6 +310,8 @@ private fun Reader(
             passage = api.getChapter(book, chapter)
         } catch (failure: YouVersionApiException) {
             error = failure
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Exception) {
             error = YouVersionApiException(YouVersionFailure.NETWORK, "Something went wrong while loading this chapter. Please try again.")
         } finally {
