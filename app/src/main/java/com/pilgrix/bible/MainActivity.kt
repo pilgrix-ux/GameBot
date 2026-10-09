@@ -181,7 +181,7 @@ private fun HomeScreen(onRead: () -> Unit, onPick: () -> Unit, onPlans: () -> Un
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text("THE WORD", color = Gold, fontSize = 10.sp, letterSpacing = 2.2.sp, fontWeight = FontWeight.Bold)
-                    Text("NIV Bible", color = White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text("Holy Bible", color = White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 }
                 IconButton(onClick = onSearch) { Icon(Icons.Default.Search, "Search", tint = White) }
             }

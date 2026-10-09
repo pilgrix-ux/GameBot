@@ -1,6 +1,6 @@
-# NIV Bible (Android)
+# The Word — Android Bible App
 
-Native Android app built with Kotlin and Jetpack Compose. The chapter reader uses the official YouVersion Platform REST API for NIV content (Bible version ID **111**).
+A native Android Bible app built with Kotlin and Jetpack Compose. Its chosen translation is the New International Version (NIV), loaded through the official YouVersion Platform REST API (Bible version ID **111**).
 
 ## Connect real NIV chapter text
 
