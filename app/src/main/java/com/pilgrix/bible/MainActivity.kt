@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun BibleApp(context: Context) {
     val prefs = remember { context.getSharedPreferences("niv_bible", Context.MODE_PRIVATE) }
+    val bibleApi = remember { YouVersionApi(BuildConfig.YVP_APP_KEY) }
     var tab by rememberSaveable { mutableStateOf("Home") }
     var book by rememberSaveable { mutableStateOf(prefs.getString("book", "John") ?: "John") }
     var chapter by rememberSaveable { mutableIntStateOf(prefs.getInt("chapter", 3)) }
@@ -86,10 +88,25 @@ private fun BibleApp(context: Context) {
         Surface(Modifier.fillMaxSize(), color = Ink) {
             Column(Modifier.fillMaxSize()) {
                 when (tab) {
-                    "Read" -> Reader(book, chapter, fontSize, darkReader, onBack = { tab = "Home" },
+                    "Read" -> Reader(book, chapter, fontSize, darkReader, bibleApi, onBack = { tab = "Home" },
                         onPick = { picker = true },
-                        onPrev = { if (chapter > 1) chapter--; prefs.edit().putInt("chapter", chapter).apply() },
-                        onNext = { chapter++; prefs.edit().putInt("chapter", chapter).apply() },
+                        onPrev = {
+                            val current = books.indexOfFirst { it.name == book }.coerceAtLeast(0)
+                            if (chapter > 1) chapter-- else if (current > 0) {
+                                book = books[current - 1].name
+                                chapter = books[current - 1].chapters
+                            }
+                            prefs.edit().putString("book", book).putInt("chapter", chapter).apply()
+                        },
+                        onNext = {
+                            val current = books.indexOfFirst { it.name == book }.coerceAtLeast(0)
+                            if (chapter < books[current].chapters) chapter++ else if (current < books.lastIndex) {
+                                book = books[current + 1].name
+                                chapter = 1
+                            }
+                            prefs.edit().putString("book", book).putInt("chapter", chapter).apply()
+                            prefs.edit().putInt("progress", (prefs.getInt("progress", 12) + 1).coerceAtMost(100)).apply()
+                        },
                         onFont = { fontSize = it.coerceIn(16,30); prefs.edit().putInt("fontSize",fontSize).apply() },
                         onTheme = { darkReader = it; prefs.edit().putBoolean("darkReader",it).apply() },
                         saved = bookmarks.contains("$book $chapter"),
@@ -217,6 +234,8 @@ private fun HomeScreen(onRead: () -> Unit, onPick: () -> Unit, onPlans: () -> Un
                 Text("“The Lord is my shepherd, I lack nothing.”", color = White, fontSize = 20.sp, lineHeight = 29.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(10.dp))
                 Text("PSALM 23:1 · NIV", color = Gold, fontSize = 11.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
+                Text("Scripture taken from the Holy Bible, NEW INTERNATIONAL VERSION®, NIV®. Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® Used by permission. All rights reserved worldwide.", color = Muted, fontSize = 9.sp, lineHeight = 12.sp)
             }
         }
         item {
@@ -261,12 +280,42 @@ private fun ThreeDBible(modifier: Modifier = Modifier) {
 
 @Composable
 private fun Reader(
-    book: String, chapter: Int, fontSize: Int, dark: Boolean, onBack: () -> Unit, onPick: () -> Unit,
-    onPrev: () -> Unit, onNext: () -> Unit, onFont: (Int) -> Unit, onTheme: (Boolean) -> Unit,
-    saved: Boolean, onSave: () -> Unit
+    book: String, chapter: Int, fontSize: Int, dark: Boolean, api: YouVersionApi,
+    onBack: () -> Unit, onPick: () -> Unit, onPrev: () -> Unit, onNext: () -> Unit,
+    onFont: (Int) -> Unit, onTheme: (Boolean) -> Unit, saved: Boolean, onSave: () -> Unit
 ) {
     val bg = if (dark) Ink else Paper
     val fg = if (dark) White else Color(0xFF26313D)
+    val uriHandler = LocalUriHandler.current
+    var passage by remember(book, chapter) { mutableStateOf<BiblePassage?>(null) }
+    var error by remember(book, chapter) { mutableStateOf<YouVersionApiException?>(null) }
+    var loading by remember(book, chapter) { mutableStateOf(false) }
+    var retryToken by remember { mutableIntStateOf(0) }
+    val currentIndex = books.indexOfFirst { it.name == book }.coerceAtLeast(0)
+    val currentBook = books[currentIndex]
+    val previousAvailable = chapter > 1 || currentIndex > 0
+    val nextAvailable = chapter < currentBook.chapters || currentIndex < books.lastIndex
+
+    LaunchedEffect(book, chapter, api.isConfigured, retryToken) {
+        passage = null
+        error = null
+        if (!api.isConfigured) {
+            error = YouVersionApiException(YouVersionFailure.MISSING_KEY,
+                "The NIV text connection needs a YouVersion app key. Register this app, make sure NIV access is approved, add YVP_APP_KEY to your Gradle user properties, and rebuild.")
+            return@LaunchedEffect
+        }
+        loading = true
+        try {
+            passage = api.getChapter(book, chapter)
+        } catch (failure: YouVersionApiException) {
+            error = failure
+        } catch (_: Exception) {
+            error = YouVersionApiException(YouVersionFailure.NETWORK, "Something went wrong while loading this chapter. Please try again.")
+        } finally {
+            loading = false
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(bg)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = fg) }
@@ -279,41 +328,94 @@ private fun Reader(
             Box {
                 IconButton(onClick = { tools = true }) { Icon(Icons.Default.TextFields, "Reading settings", tint = fg) }
                 DropdownMenu(expanded = tools, onDismissRequest = { tools = false }) {
-                    DropdownMenuItem(text = { Text("Smaller text") }, onClick = { onFont(fontSize-2); tools = false })
-                    DropdownMenuItem(text = { Text("Larger text") }, onClick = { onFont(fontSize+2); tools = false })
+                    DropdownMenuItem(text = { Text("Smaller text") }, onClick = { onFont(fontSize - 2); tools = false })
+                    DropdownMenuItem(text = { Text("Larger text") }, onClick = { onFont(fontSize + 2); tools = false })
                     DropdownMenuItem(text = { Text(if (dark) "Light page" else "Dark page") }, onClick = { onTheme(!dark); tools = false })
                 }
             }
         }
         HorizontalDivider(color = if (dark) Color(0xFF2A3A4D) else Color(0xFFEAE0CC))
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 25.dp, vertical = 25.dp)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 22.dp)) {
             Text(book.uppercase(), color = if (dark) Gold else Color(0xFF8C744A), fontSize = 11.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(7.dp)); Text("Chapter $chapter", color = fg, fontSize = 31.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(22.dp))
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (dark) InkSoft else Color(0xFFEFE6D6)).padding(18.dp)) {
-                Icon(Icons.Default.AutoStories, null, tint = Gold, modifier = Modifier.size(25.dp))
-                Spacer(Modifier.height(12.dp)); Text("Your NIV reading", color = fg, fontSize = (fontSize+1).sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-                Text("Connect a licensed NIV Bible text provider to read the full chapter here. Your reading screen, chapter navigation, display settings, and bookmarks are ready.",
-                    color = if (dark) Muted else Color(0xFF59616A), fontSize = fontSize.sp, lineHeight = (fontSize+9).sp)
-                Spacer(Modifier.height(14.dp))
-                Text("NIV TEXT PROVIDER REQUIRED", color = if (dark) Gold else Color(0xFF8C744A), fontSize = 10.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(7.dp))
+            Text("Chapter $chapter", color = fg, fontSize = 31.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(20.dp))
+            when {
+                loading -> Column(Modifier.fillMaxWidth().padding(vertical = 42.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Gold)
+                    Spacer(Modifier.height(14.dp))
+                    Text("Opening your chapter…", color = if (dark) Muted else Color(0xFF59616A), fontSize = 14.sp)
+                }
+                passage != null -> {
+                    Text(passage!!.content, color = fg, fontSize = fontSize.sp, lineHeight = (fontSize + 10).sp)
+                    Spacer(Modifier.height(24.dp))
+                    HorizontalDivider(color = if (dark) Color(0xFF2A3A4D) else Color(0xFFD8CDB8))
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "Scripture taken from the Holy Bible, NEW INTERNATIONAL VERSION®, NIV®. Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® Used by permission. All rights reserved worldwide.",
+                        color = if (dark) Muted else Color(0xFF756D60), fontSize = 10.sp, lineHeight = 14.sp
+                    )
+                }
+                error != null -> Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(if (dark) InkSoft else Color(0xFFEFE6D6)).padding(20.dp)
+                ) {
+                    Icon(
+                        when (error!!.failure) {
+                            YouVersionFailure.MISSING_KEY, YouVersionFailure.NIV_NOT_ENABLED, YouVersionFailure.UNAUTHORIZED -> Icons.Default.VpnKey
+                            YouVersionFailure.NETWORK -> Icons.Default.WifiOff
+                            else -> Icons.Default.MenuBook
+                        },
+                        contentDescription = null, tint = Gold, modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        when (error!!.failure) {
+                            YouVersionFailure.MISSING_KEY -> "Connect your NIV Bible"
+                            YouVersionFailure.UNAUTHORIZED -> "Check the app key"
+                            YouVersionFailure.NIV_NOT_ENABLED -> "NIV access needs approval"
+                            YouVersionFailure.PASSAGE_NOT_FOUND -> "Chapter unavailable"
+                            YouVersionFailure.RATE_LIMITED -> "Let's pause for a moment"
+                            YouVersionFailure.SERVER -> "Bible service unavailable"
+                            YouVersionFailure.NETWORK -> "You're not connected"
+                            YouVersionFailure.INVALID_RESPONSE -> "Unexpected response"
+                        },
+                        color = fg, fontSize = 20.sp, fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(error!!.message, color = if (dark) Muted else Color(0xFF59616A), fontSize = 14.sp, lineHeight = 21.sp)
+                    Spacer(Modifier.height(14.dp))
+                    if (error!!.failure in setOf(YouVersionFailure.MISSING_KEY, YouVersionFailure.UNAUTHORIZED, YouVersionFailure.NIV_NOT_ENABLED)) {
+                        Button(
+                            onClick = { uriHandler.openUri("https://platform.youversion.com/") },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)
+                        ) {
+                            Text("Open YouVersion Platform", fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.width(6.dp))
+                            Icon(Icons.Default.OpenInNew, null, modifier = Modifier.size(16.dp))
+                        }
+                    } else {
+                        OutlinedButton(onClick = { retryToken++ }, shape = RoundedCornerShape(14.dp)) {
+                            Text("Try again")
+                        }
+                    }
+                }
             }
-            Spacer(Modifier.height(18.dp)); Text("TAKE A MOMENT", color = if (dark) Gold else Color(0xFF8C744A), fontSize = 10.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(24.dp))
+            Text("TAKE A MOMENT", color = if (dark) Gold else Color(0xFF8C744A), fontSize = 10.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("What stands out to you in this chapter? What could you put into practice today?", color = fg, fontSize = fontSize.sp, lineHeight = (fontSize+9).sp)
+            Text("What stands out to you in this chapter? What could you put into practice today?", color = fg, fontSize = fontSize.sp, lineHeight = (fontSize + 9).sp)
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = onPrev, modifier = Modifier.weight(1f), enabled = chapter > 1, shape = RoundedCornerShape(14.dp)) {
+            OutlinedButton(onClick = onPrev, modifier = Modifier.weight(1f), enabled = previousAvailable, shape = RoundedCornerShape(14.dp)) {
                 Icon(Icons.Default.ChevronLeft, null); Spacer(Modifier.width(4.dp)); Text("Previous")
             }
-            Button(onClick = onNext, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
-                Text("Next chapter", fontWeight = FontWeight.Bold); Spacer(Modifier.width(4.dp)); Icon(Icons.Default.ChevronRight, null)
+            Button(onClick = onNext, modifier = Modifier.weight(1f), enabled = nextAvailable, shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
+                Text("Next", fontWeight = FontWeight.Bold); Spacer(Modifier.width(4.dp)); Icon(Icons.Default.ChevronRight, null)
             }
         }
     }
 }
-
 @Composable
 private fun SavedScreen(saved: Set<String>, onOpen: (String) -> Unit) {
     Column(Modifier.fillMaxSize().padding(22.dp)) {
