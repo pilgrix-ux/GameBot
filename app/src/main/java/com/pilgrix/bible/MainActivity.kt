@@ -39,11 +39,28 @@ private val Muted = Color(0xFF9CA9B9)
 private val White = Color(0xFFFFFCF6)
 private data class Book(val name: String, val chapters: Int, val group: String)
 private val books = listOf(
-    Book("Genesis",50,"Old Testament"), Book("Exodus",40,"Old Testament"), Book("Psalms",150,"Old Testament"),
-    Book("Proverbs",31,"Old Testament"), Book("Isaiah",66,"Old Testament"), Book("Matthew",28,"New Testament"),
-    Book("Mark",16,"New Testament"), Book("Luke",24,"New Testament"), Book("John",21,"New Testament"),
-    Book("Acts",28,"New Testament"), Book("Romans",16,"New Testament"), Book("Philippians",4,"New Testament"),
-    Book("James",5,"New Testament"), Book("Revelation",22,"New Testament")
+    Book("Genesis",50,"Old Testament"), Book("Exodus",40,"Old Testament"), Book("Leviticus",27,"Old Testament"),
+    Book("Numbers",36,"Old Testament"), Book("Deuteronomy",34,"Old Testament"), Book("Joshua",24,"Old Testament"),
+    Book("Judges",21,"Old Testament"), Book("Ruth",4,"Old Testament"), Book("1 Samuel",31,"Old Testament"),
+    Book("2 Samuel",24,"Old Testament"), Book("1 Kings",22,"Old Testament"), Book("2 Kings",25,"Old Testament"),
+    Book("1 Chronicles",29,"Old Testament"), Book("2 Chronicles",36,"Old Testament"), Book("Ezra",10,"Old Testament"),
+    Book("Nehemiah",13,"Old Testament"), Book("Esther",10,"Old Testament"), Book("Job",42,"Old Testament"),
+    Book("Psalms",150,"Old Testament"), Book("Proverbs",31,"Old Testament"), Book("Ecclesiastes",12,"Old Testament"),
+    Book("Song of Solomon",8,"Old Testament"), Book("Isaiah",66,"Old Testament"), Book("Jeremiah",52,"Old Testament"),
+    Book("Lamentations",5,"Old Testament"), Book("Ezekiel",48,"Old Testament"), Book("Daniel",12,"Old Testament"),
+    Book("Hosea",14,"Old Testament"), Book("Joel",3,"Old Testament"), Book("Amos",9,"Old Testament"),
+    Book("Obadiah",1,"Old Testament"), Book("Jonah",4,"Old Testament"), Book("Micah",7,"Old Testament"),
+    Book("Nahum",3,"Old Testament"), Book("Habakkuk",3,"Old Testament"), Book("Zephaniah",3,"Old Testament"),
+    Book("Haggai",2,"Old Testament"), Book("Zechariah",14,"Old Testament"), Book("Malachi",4,"Old Testament"),
+    Book("Matthew",28,"New Testament"), Book("Mark",16,"New Testament"), Book("Luke",24,"New Testament"),
+    Book("John",21,"New Testament"), Book("Acts",28,"New Testament"), Book("Romans",16,"New Testament"),
+    Book("1 Corinthians",16,"New Testament"), Book("2 Corinthians",13,"New Testament"), Book("Galatians",6,"New Testament"),
+    Book("Ephesians",6,"New Testament"), Book("Philippians",4,"New Testament"), Book("Colossians",4,"New Testament"),
+    Book("1 Thessalonians",5,"New Testament"), Book("2 Thessalonians",3,"New Testament"), Book("1 Timothy",6,"New Testament"),
+    Book("2 Timothy",4,"New Testament"), Book("Titus",3,"New Testament"), Book("Philemon",1,"New Testament"),
+    Book("Hebrews",13,"New Testament"), Book("James",5,"New Testament"), Book("1 Peter",5,"New Testament"),
+    Book("2 Peter",3,"New Testament"), Book("1 John",5,"New Testament"), Book("2 John",1,"New Testament"),
+    Book("3 John",1,"New Testament"), Book("Jude",1,"New Testament"), Book("Revelation",22,"New Testament")
 )
 
 class MainActivity : ComponentActivity() {
